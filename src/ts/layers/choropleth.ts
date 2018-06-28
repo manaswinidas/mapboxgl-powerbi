@@ -30,7 +30,7 @@ module powerbi.extensibility.visual {
             const vectorProperty = choroSettings[`vectorProperty${choroSettings.currentLevel}`];
 
 
-            //Changed to fill-extrusion
+
             const choroplethLayer = mapboxUtils.decorateLayer({
                 id: Choropleth.ID,
                 type: "fill-extrusion",
@@ -108,7 +108,7 @@ module powerbi.extensibility.visual {
             const zeroFilter = ["==", vectorProperty, ""]
             const map = this.parent.getMap();
 
-            map.setPaintProperty(Choropleth.ID, 'fill-extrusion-opacity', choroSettings.opacity / 100);
+            map.setPaintProperty(Choropleth.ID, 'fill-extrusion-opacity', 1);
             map.setFilter(Choropleth.HighlightID, zeroFilter);
             map.setFilter(Choropleth.HighlightOutlineID, zeroFilter);
         }
@@ -143,7 +143,7 @@ module powerbi.extensibility.visual {
             if (this.parent.hasSelection()) {
                 opacity = 0.5 * opacity;
             }
-            map.setPaintProperty(Choropleth.ID, 'fill-extrusion-opacity', opacity);
+            map.setPaintProperty(Choropleth.ID, 'fill-extrusion-opacity', 1);
             map.setFilter(Choropleth.HighlightID, locationFilter);
             map.setFilter(Choropleth.HighlightOutlineID, locationFilter);
         }
@@ -284,7 +284,7 @@ module powerbi.extensibility.visual {
                     }
 
                     
-                    let height: any = Math.random() * 100
+                    let height: any = Math.random() * 100000
                     existingStops[locationStr] = true;
                     colors.stops.push([locationStr, color.toString()]);
                     heights.stops.push([locationStr, height]);
@@ -293,10 +293,10 @@ module powerbi.extensibility.visual {
                 }
 
                 console.log('set Opacity ')
-                map.setPaintProperty(Choropleth.ID, 'fill-extrusion-opacity ', 1);
+                map.setPaintProperty(Choropleth.ID, 'fill-extrusion-opacity', 1);
                 console.log('')
                 console.log('set Height')
-                map.setPaintProperty(Choropleth.ID, 'fill-extrusion-base ', 0);
+                map.setPaintProperty(Choropleth.ID, 'fill-extrusion-base', 0);
                 console.log('')
 
 
@@ -337,10 +337,11 @@ module powerbi.extensibility.visual {
                 console.log('7')
             }
 
-            console.log('Map Layer from map.getLayer ---------------------------')
+            console.log('map.getLayer ---------------------------')
             console.log(map.getLayer(Choropleth.ID))
             console.log(' ')
-            
+            console.log(' ')
+
         }
 
         hasTooltip() {
