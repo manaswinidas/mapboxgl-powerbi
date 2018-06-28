@@ -3,20 +3,20 @@ module powerbi.extensibility.visual {
 
     export function getValue<T>(objects: DataViewObjects, objectName: string, propertyName: string, defaultValue: T): T {
         if (objects) {
-          let object = objects[objectName];
-          if (object) {
-            let property: T = <T>object[propertyName];
-            if (property !== undefined) {
-              return property;
+            let object = objects[objectName];
+            if (object) {
+                let property: T = <T>object[propertyName];
+                if (property !== undefined) {
+                    return property;
+                }
             }
-          }
         }
         return defaultValue;
-      }
+    }
 
     declare var debug: any;
     declare var turf: any;
-    declare var MapboxDraw : any;
+    declare var MapboxDraw: any;
 
     export class MapboxMap implements IVisual {
         private map: mapboxgl.Map;
@@ -37,15 +37,18 @@ module powerbi.extensibility.visual {
         private host: IVisualHost;
         private categories: any;
         private draw: any;  // TODO: this should not be any
+        private counter: any;
         //Label
         private target: HTMLElement;
         private textNode: Text;
         private maxRows: number;
+        private myBtn: HTMLButtonElement;
+        private dummyOptions: VisualUpdateOptions; 
 
         constructor(options: VisualConstructorOptions) {
             console.log('++ Init');
             // Map initialization
-       
+
 
             this.previousZoom = 0;
             this.mapDiv = document.createElement('div');
@@ -60,6 +63,11 @@ module powerbi.extensibility.visual {
             this.labelDiv.appendChild(document.createTextNode("Row count:"));
             options.element.appendChild(this.labelDiv);
 
+            this.myBtn = document.createElement("button");
+            this.myBtn.appendChild(document.createTextNode("More Data??"));
+            this.myBtn.className = 'fetchBtn';
+            options.element.appendChild(this.myBtn);
+
             // For anchor elements to work we need to manually
             // call launchUrl API method
             options.element.addEventListener("click", (e) => {
@@ -68,8 +76,12 @@ module powerbi.extensibility.visual {
                     e.preventDefault();
                     options.host.launchUrl(link.href);
                 }
+                var btn = <HTMLButtonElement>e.target;
+                if (btn.className == 'fetchBtn') {
+                    this.btn_click();
+                }
             });
-
+            this.myBtn.className = 'fetchBtnHide';
             this.host = options.host;
             this.autoZoomControl = new AutoZoomControl(this.host);
 
@@ -78,6 +90,21 @@ module powerbi.extensibility.visual {
             this.host = options.host;
             this.filter = new Filter(this)
             this.palette = new Palette(this, options.host)
+            this.counter = 0
+        }
+
+
+        private btn_click() {
+            console.log('Click - fetchMoreData')
+            let request_accepted: boolean = this.host.fetchMoreData();
+            // handle rejection
+            console.log('Click - fetchMoreDate: ' + request_accepted)
+            if (!request_accepted) {
+                console.log('++++ fin')
+                //this.labelDiv.textContent = ' (Click - Cut Off!)';
+                this.labelDiv.appendChild(document.createTextNode(' (Click - Cut Off!)'));
+                this.update(this.dummyOptions)
+            }
         }
 
         onUpdate(map, settings, zoom, updatedHandler: Function) {
@@ -120,25 +147,20 @@ module powerbi.extensibility.visual {
         * validation and return other values/defaults
         */
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
-                        
+
             if (options.objectName == 'fetchDataProperties') {
-               
-    
-               
+
             }
-          
+
             if (options.objectName == 'colorSelector') {
                 return this.palette.enumerateObjectInstances(options);
             } else {
                 return MapboxSettings.enumerateObjectInstances(this.settings || MapboxSettings.getDefault(), options);
             }
 
-            
+
         }
 
-
-
-        
         public on(event: string, fn: Function) {
             switch (event) {
                 case 'updated': {
@@ -168,34 +190,27 @@ module powerbi.extensibility.visual {
             let indexes = values;
             let category = this.categories[0];
 
-            console.log('****** Category');
-            console.log (category)
-
             if (role) {
-                category = this.categories.find( cat => {
-                    console.log('Role: '+ role.displayName)
+                category = this.categories.find(cat => {
                     return cat.source.displayName == role.displayName;
-                    
+
                 });
 
-                indexes = values.map( value => category.values.indexOf(value));
-                console.log('Index: ' + indexes)
+                indexes = values.map(value => category.values.indexOf(value));
             }
 
-            
-            
+
+
             const selectors = indexes
-                .filter( index => {
+                .filter(index => {
                     return (index >= 0 && index < category.values.length)
                 })
-                .map( index => {
-                    console.log('**************** HELLO *************************')
-                    console.log(this.host.createSelectionIdBuilder().withCategory(category, index).createSelectionId());
+                .map(index => {
                     return this.host.createSelectionIdBuilder()
                         .withCategory(category, index).createSelectionId();
                 })
 
-             
+
 
             this.selectionManager.select(selectors, false);
         }
@@ -282,14 +297,14 @@ module powerbi.extensibility.visual {
                 // Get the feature the user has drawn
                 const selection_poly = e.features[0];
 
-                const selectFeature = function(sel_pol, feature) {
+                const selectFeature = function (sel_pol, feature) {
                     if (feature.geometry.type === 'Point' && turf.booleanContains(sel_pol, feature)) {
                         return true;
                     }
                     if ((feature.geometry.type === 'Polygon' || feature.geometry.type === 'Linestring') &&
-                       (turf.booleanOverlap(feature, sel_pol) || turf.booleanContains(sel_pol, feature) ||
-                        turf.booleanContains(feature, sel_pol)
-                    )) {
+                        (turf.booleanOverlap(feature, sel_pol) || turf.booleanContains(sel_pol, feature) ||
+                            turf.booleanContains(feature, sel_pol)
+                        )) {
                         return true;
                     }
 
@@ -304,7 +319,7 @@ module powerbi.extensibility.visual {
                 // Find features in a layer the user selected bbox
                 const layers = this.getExistingLayers();
                 const layerIDs = layers.map(layer => layer.getId());
-                const bbox_features : any[] = this.map.queryRenderedFeatures([southWest, northEast], {
+                const bbox_features: any[] = this.map.queryRenderedFeatures([southWest, northEast], {
                     layers: layerIDs
                 });
 
@@ -332,10 +347,8 @@ module powerbi.extensibility.visual {
                     const roleMap = this.getRoleMap();
                     if (selectedFeatures.length > constants.MAX_SELECTION_COUNT) {
                         selectedFeatures = selectedFeatures.slice(0, constants.MAX_SELECTION_COUNT);
-
-                        console.log('Selected Features: ' + selectedFeatures)
                     }
-                    layers.map( layer => {
+                    layers.map(layer => {
                         layer.updateSelection(
                             selectedFeatures,
                             roleMap);
@@ -446,7 +459,10 @@ module powerbi.extensibility.visual {
             // Placeholder to indicate whether data changed or paint prop changed
             // For now this is always true
 
-            const features = mapboxConverter.convert(dataView);
+           
+            const features = mapboxConverter.convert(dataView)
+
+          
 
             this.palette.update(dataView, features);
 
@@ -458,10 +474,14 @@ module powerbi.extensibility.visual {
                 }
             })
 
+         
+
             for (let id in datasources) {
                 let datasource = datasources[id];
                 datasource.update(this.map, features, this.roleMap, this.settings);
             };
+
+    
 
             this.layers.map(layer => {
                 if (layer.hasTooltip()) {
@@ -478,6 +498,9 @@ module powerbi.extensibility.visual {
             this.onUpdate(this.map, this.settings, true, this.updatedHandler);
 
             // **************** FetchData Test 44 ***************************
+
+
+
             //* Ed G. Get row Count //
             var table: DataViewTable = dataView.table;
             var columns: DataViewMetadataColumn[] = table.columns;
@@ -487,37 +510,43 @@ module powerbi.extensibility.visual {
             console.log(dataView);
 
             var propertyGroupName: string = "fetchDataProperties";
-            var max: number = getValue<number>(dataView.metadata.objects, propertyGroupName, "maxFetch", 60000);
-            var promptForMore: boolean = getValue<boolean>(dataView.metadata.objects, propertyGroupName, "promptAtMax", true);
-
+            var max: number = getValue<number>(dataView.metadata.objects, propertyGroupName, "maxFetch", 0);
+            
             console.log('+++ Maximum Rows to pull')
             console.log(max)
 
             console.log('++++++ Upated Fetch NEW1 boiiiii')
-            console.log('++++++++ RowCount new: ' + rows.length );
+            console.log('++++++++ RowCount new: ' + rows.length);
             this.labelDiv.textContent = 'Row Count: ' + rows.length;
 
             console.log("++++++++ Segment " + JSON.stringify(dataView.metadata.segment));
-        
-            if (dataView.metadata.segment) {
-              console.log('++++++++ fetch + 1')
-              this.labelDiv.textContent = 'Row Count: ' + rows.length + ' (fetchMoreData...)';
-              
 
-              //request for more data if available
-              console.log('fetchMoreDate: ' + this.host.fetchMoreData())
-              let request_accepted: boolean = this.host.fetchMoreData();
-              // handle rejection
-              if (!request_accepted) {
-                 console.log('++++ fin')
-                    //One more Try:
-                    this.host.fetchMoreData();
-              }
-            
+            if (dataView.metadata.segment) {
+                console.log('++++++++ fetch + 1')
+                this.labelDiv.textContent = 'Row Count: ' + rows.length + ' (fetch: MoreData Available...)';
+
+                if (this.counter > max) {
+                    console.log('Max Fetches Reached');
+                    this.myBtn.className = 'fetchBtn'
+                } else {
+                    //request for more data if available
+                    let request_accepted: boolean = this.host.fetchMoreData();
+                    // handle rejection
+                    if (!request_accepted) {
+                        console.log('++++ fin')
+                        this.labelDiv.appendChild(document.createTextNode(' (Click - Cut Off!)'));
+                    }
+                }
             } else {
                 this.labelDiv.textContent = 'Row Count: ' + rows.length + ' (done.)';
+                this.myBtn.className = 'fetchBtnHide'
             }
 
+
+
+
+
+            // ********************** End Fetch Test ***********************************
 
         }
 
@@ -526,7 +555,7 @@ module powerbi.extensibility.visual {
             let temp = options.dataViews[0].metadata.columns;
             let temp_indexes = []
             let temp_ii = []
-            temp.map( (v, i) => {
+            temp.map((v, i) => {
                 if (v.roles['location']) {
                     temp_indexes.push(v.displayName)
                     temp_ii.push(i)
@@ -548,14 +577,22 @@ module powerbi.extensibility.visual {
         @mapboxUtils.logExceptions()
         public update(options: VisualUpdateOptions) {
             console.log('++ Update');
-            const dataView: DataView = options.dataViews[0];
-            
-            //* Ed G. Get row Count //
-            var table: DataViewTable = dataView.table;
-            var columns: DataViewMetadataColumn[] = table.columns;
-            var rows: DataViewTableRow[] = table.rows;
-            //console.log('Parent - RowCount: ' + rows.length )
+        
 
+            this.dummyOptions = options;
+            
+            // indicates this is the first segment of new data.
+            if (options.operationKind == VisualDataChangeOperationKind.Create) {
+                this.counter = 1;
+            }
+
+            // on second or subesquent segments:
+            if (options.operationKind == VisualDataChangeOperationKind.Append) {
+                this.counter++
+            }
+
+
+            const dataView: DataView = options.dataViews[0];
 
             if (!dataView) {
                 console.error('No dataView received from powerBI api')
@@ -563,7 +600,7 @@ module powerbi.extensibility.visual {
                 return
             }
 
-           
+
             this.settings = MapboxSettings.parse<MapboxSettings>(dataView);
 
             if (!this.validateOptions(options)) {
@@ -615,58 +652,8 @@ module powerbi.extensibility.visual {
 
                 console.log('UpdateLayer Ended -------')
 
- //**** Ed G. Fetch data Test */
-/*
- if (options.operationKind == VisualDataChangeOperationKind.Create) {
-    console.log('---- first Update')
-    console.log('+++++++ RowCount: ' + rows.length )
-    console.log("++++++++ Segment " + JSON.stringify(dataView.metadata.segment));
-    if (dataView.metadata.segment) {
-     console.log('+++++++ fetch 1st')
-     //request for more data if available
-     let request_accepted: boolean = this.host.fetchMoreData();
-     // handle rejection
-     if (!request_accepted) {
-        console.log('++++ fin')
-     }
-   }
-} 
-
-// on second or subesquent segments:
-if (options.operationKind == VisualDataChangeOperationKind.Append) {
-    console.log("++++ Append Update")
-    console.log('++++++++ RowCount: ' + rows.length );
-    console.log("++++++++ Segment " + JSON.stringify(dataView.metadata.segment));
-
-    if (dataView.metadata.segment) {
-      console.log('++++++++ fetch + 1')
-      //request for more data if available
-      console.log('fetchMoreDate: ' + this.host.fetchMoreData())
-      let request_accepted: boolean = this.host.fetchMoreData();
-      // handle rejection
-      if (!request_accepted) {
-         console.log('++++ fin')
-      }
-    }
-   
-  }
-*/
-//**** End Fetch data Test */
-
                 return;
             }
-
-          
-            
-
-          
-
-
-
-
-
-
-
 
         }
 

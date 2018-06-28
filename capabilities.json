@@ -1412,7 +1412,7 @@
           }
         },
         "minFetch": {
-          "displayName": "Minimum Fetch",
+          "displayName": "Fetch Window",
           "displayNameKey": "minFetch",
           "description": "Default HardCoded",
           "type": {
@@ -1425,14 +1425,6 @@
           "description": "Maximum zoom level layer is visibile at.",
           "type": {
             "numeric": true
-          }
-        },
-        "promptAtMax": {
-          "displayName": "Prompt for more at Max",
-          "displayNameKey": "promptAtMax",
-          "description": "Toggle Fetch on/off",
-          "type": {
-            "bool": true
           }
         }
       }

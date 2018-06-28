@@ -1,9 +1,10 @@
 module powerbi.extensibility.visual {
     export module mapboxConverter {
         
-        console.log('--mapboxConverter')
+        
 
         const convertToFeatures = (rows, columns) => {
+            console.log('--------------------------mapboxConverter --------------------------')
             return rows.map( (row, rowIndex) => {
                 let ret: GeoJSON.Feature<any> = {
                     type: "Feature",

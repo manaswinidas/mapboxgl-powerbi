@@ -78,8 +78,7 @@ module powerbi.extensibility.visual {
     export class fetchDataSettings {
         public enableFetch: boolean = true;
         public minFetch: number = 30000;
-        public maxFetch: number = 60000;
-        public promptAtMax: boolean = true;
+        public maxFetch: number = 0;
     }
 
     export class HeatmapSettings {

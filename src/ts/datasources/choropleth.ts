@@ -9,6 +9,7 @@ module powerbi.extensibility.visual.data {
         }
 
         addSources(map, settings) {
+            console.log('== Choropleth addSources ==')
             map.addSource('choropleth-source', {
                 type: 'vector',
                 url: settings.choropleth[`vectorTileUrl${settings.choropleth.currentLevel}`],
@@ -17,10 +18,12 @@ module powerbi.extensibility.visual.data {
         }
 
         removeSources(map) {
+            console.log('== Choropleth removeSources ==')
             map.removeSource('choropleth-source');
         }
 
         ensure(map, layerId, settings): void {
+            console.log('== Choropleth ensure ==')
             super.ensure(map, layerId, settings)
             const source: any = map.getSource('choropleth-source');
             if (!source) {
@@ -29,14 +32,21 @@ module powerbi.extensibility.visual.data {
         }
 
         getLimits() {
+            console.log('== Choropleth getLimits ==')
             return this.fillColorLimits;
         }
 
         getData(map, settings) : any[] {
+            console.log('== Choropleth getMapData ==')
+            console.log(this.choroplethData)
             return this.choroplethData;
         }
 
         update(map, features, roleMap, settings) {
+            console.log('== Choropleth Update ==')
+
+
+
             super.update(map, features, roleMap, settings)
 
             this.choroplethData = features.map(f => f.properties);
