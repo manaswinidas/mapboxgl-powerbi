@@ -91,6 +91,9 @@ module powerbi.extensibility.visual {
         }
 
         export function getLimits(data, myproperty) : Limits {
+            console.log('map.util: getLimits')
+            console.log(data)
+            console.log(myproperty)
 
             let min = null;
             let max = null;

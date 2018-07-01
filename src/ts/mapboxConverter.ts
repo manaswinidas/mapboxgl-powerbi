@@ -29,6 +29,8 @@ module powerbi.extensibility.visual {
                     ret.properties[column.displayName] = value;
                 })
                 return ret;
+               
+              
             })
         }
 
